@@ -1,0 +1,221 @@
+openapi: 3.0.3
+info:
+  title: Schedule Management API
+  version: 1.0.0
+  description: API for authentication, schedules, and projects
+
+servers:
+  - url: http://localhost:8000
+
+paths:
+
+  /auth/verify:
+    get:
+      summary: Verify JWT token
+      responses:
+        "200":
+          description: Token is valid
+
+  /auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRequest"
+      responses:
+        "200":
+          description: JWT token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /schedule/weekly:
+    get:
+      summary: Get weekly schedule
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Weekly schedule page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulePageResponse"
+
+  /schedule/update:
+    post:
+      summary: Update schedules
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/ScheduleUpdateRequest"
+      responses:
+        "200":
+          description: Updated successfully
+
+  /schedule/add:
+    post:
+      summary: Add new employee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Employee"
+      responses:
+        "200":
+          description: Created employee ID
+          content:
+            application/json:
+              schema:
+                type: integer
+
+  /schedule/delete/{employeeId}:
+    delete:
+      summary: Delete employee
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted successfully
+
+  /projects/all:
+    get:
+      summary: Get all projects
+      responses:
+        "200":
+          description: Projects page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectPageResponse"
+
+  /projects/{projectId}:
+    get:
+      summary: Get project by ID
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/change:
+    post:
+      summary: Change project employees
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/EmployeeProjects"
+      responses:
+        "200":
+          description: Updated successfully
+
+components:
+  schemas:
+
+    AuthRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        position:
+          type: string
+
+    ScheduleUpdateRequest:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+        date:
+          type: string
+          format: date
+        shift:
+          type: string
+
+    SchedulePageResponse:
+      type: object
+      properties:
+        weekStart:
+          type: string
+          format: date
+        employees:
+          type: array
+          items:
+            $ref: "#/components/schemas/Employee"
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+
+    ProjectPageResponse:
+      type: object
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+
+    EmployeeProjects:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+        projectId:
+          type: integer
