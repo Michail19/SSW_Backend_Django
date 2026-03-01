@@ -3,7 +3,7 @@ from schedule_app.models import Employee
 
 
 class Project(models.Model):
-    project_name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255, unique=True)
 
     employees = models.ManyToManyField(
         "schedule_app.Employee",
@@ -12,7 +12,7 @@ class Project(models.Model):
     )
 
     def __str__(self):
-        return self.project_name
+        return self.name
 
 
 class EmployeeProject(models.Model):

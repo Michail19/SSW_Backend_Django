@@ -26,6 +26,7 @@ class ProjectListView(APIView):
 
     def get(self, request):
         data = get_full_projects()
+        print(data)
         return Response(data)
 
 
@@ -33,9 +34,11 @@ class ChangeProjectEmployeeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        print(request.data)
         serializer = EmployeeProjectsSerializer(data=request.data, many=True)
 
         if serializer.is_valid():
+            print(serializer.validated_data)
             change_employee(serializer.validated_data)
             return Response(status=200)
 

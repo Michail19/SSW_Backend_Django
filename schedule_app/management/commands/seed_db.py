@@ -121,7 +121,7 @@ class Command(BaseCommand):
 
         projects = []
         for name in project_names:
-            project, _ = Project.objects.get_or_create(project_name=name)
+            project, _ = Project.objects.get_or_create(name=name)
             projects.append(project)
 
         return projects
