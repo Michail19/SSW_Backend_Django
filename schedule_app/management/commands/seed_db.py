@@ -71,18 +71,18 @@ class Command(BaseCommand):
 
         # Пароли из SQL (закодированные)
         passwords = [
-            '$2a$12$rtfd779so3luDus8hIQ9KOOO4q8ESh9gbSlXRJvu.tBUpVihLkxua',
-            '$2a$12$vbXQR/TY1Iu0y9JmQ9j/x.5WSx6D135JcuqWWrBMa4JjuuFDrOyQ2',
-            '$2a$12$vUXOdJxV2gB3VO3WFOVv5OuZuZBC8sCcB71oo9aqlEzcCSbdnYHK6',
-            '$2a$12$.Sxw9xNkktYdwetdmcrNpuxvPMembipPeh5pff8v6eFfqtVngMymW',
-            '$2a$12$tBVDJNdxGz/gX4m1dfOMbeGnEx9ASBAUCTVf0roSUECuGxNWej/ri',
-            '$2a$12$M6WANscAzLUmwq7cnn5VgO6DSxiVITf8N7FFe/6DCUAXKbc76kRWe',
-            '$2a$12$woXGI0ik.Dt3vqLecLlppeHKf1UdLn5VUoRTLhMNv8iUmYHksSd7K',
-            '$2a$12$ZqSazra/MY1.8w8bvC1XXu6JWFu3oeombl671IFC66KZBo0TFNIDm',
-            '$2a$12$75EO/y5zBhuuEs8DCa/RSuQZmc4dSvY9jwqFZuZoWfKij7aWLQqta',
-            '$2a$12$0wPn5oi7ZFdADgDTFC2Qn.fy5d2WI6R46SPF0kiLJ3v7sZ4r/2L/i',
-            '$2a$12$RANZthfe/H/gDUopUuqmaudjyti94KWdSfCBhFx9h3z6P7grnwp/2',
-            '$2a$12$4pXOcZgN37VSkq9mKqfZJO/L7AK1clPgfeCaJees4aOVNNoODejsm',
+            'bcrypt$$2a$12$rtfd779so3luDus8hIQ9KOOO4q8ESh9gbSlXRJvu.tBUpVihLkxua',
+            'bcrypt$$2a$12$vbXQR/TY1Iu0y9JmQ9j/x.5WSx6D135JcuqWWrBMa4JjuuFDrOyQ2',
+            'bcrypt$$2a$12$vUXOdJxV2gB3VO3WFOVv5OuZuZBC8sCcB71oo9aqlEzcCSbdnYHK6',
+            'bcrypt$$2a$12$.Sxw9xNkktYdwetdmcrNpuxvPMembipPeh5pff8v6eFfqtVngMymW',
+            'bcrypt$$2a$12$tBVDJNdxGz/gX4m1dfOMbeGnEx9ASBAUCTVf0roSUECuGxNWej/ri',
+            'bcrypt$$2a$12$M6WANscAzLUmwq7cnn5VgO6DSxiVITf8N7FFe/6DCUAXKbc76kRWe',
+            'bcrypt$$2a$12$woXGI0ik.Dt3vqLecLlppeHKf1UdLn5VUoRTLhMNv8iUmYHksSd7K',
+            'bcrypt$$2a$12$ZqSazra/MY1.8w8bvC1XXu6JWFu3oeombl671IFC66KZBo0TFNIDm',
+            'bcrypt$$2a$12$75EO/y5zBhuuEs8DCa/RSuQZmc4dSvY9jwqFZuZoWfKij7aWLQqta',
+            'bcrypt$$2a$12$0wPn5oi7ZFdADgDTFC2Qn.fy5d2WI6R46SPF0kiLJ3v7sZ4r/2L/i',
+            'bcrypt$$2a$12$RANZthfe/H/gDUopUuqmaudjyti94KWdSfCBhFx9h3z6P7grnwp/2',
+            'bcrypt$$2a$12$4pXOcZgN37VSkq9mKqfZJO/L7AK1clPgfeCaJees4aOVNNoODejsm',
         ]
 
         for i, (username, fio, level) in enumerate(employees_data):

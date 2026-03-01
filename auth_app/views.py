@@ -19,6 +19,8 @@ class LoginView(APIView):
         user = authenticate(username=username, password=password)
 
         if not user:
+            print(username, password)
+
             return Response(
                 {"detail": "Invalid credentials"},
                 status=status.HTTP_401_UNAUTHORIZED
@@ -26,7 +28,7 @@ class LoginView(APIView):
 
         refresh = RefreshToken.for_user(user)
 
-        # добавляем кастомные claims (как в JwtTokenUtil)
+        # добавляем кастомные claims
         refresh["userId"] = user.id
         refresh["accessLevel"] = user.level
 
