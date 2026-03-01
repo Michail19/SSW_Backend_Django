@@ -22,6 +22,10 @@ def get_full_schedule_for_week(request_user, date=None):
             key=lambda e: 0 if e.id == current.id else 1
         )
 
+    # Создаём неделю для каждого сотрудника
+    for e in employees:
+        get_or_create_week(e, monday)
+
     return monday, employees
 
 
