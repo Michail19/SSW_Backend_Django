@@ -149,10 +149,7 @@ class Command(BaseCommand):
         for emp_idx, proj_indices in relations:
             employee = employees[emp_idx - 1]  # -1 потому что индексы с 1 в SQL
             for proj_idx in proj_indices:
-                EmployeeProject.objects.get_or_create(
-                    employee=employee,
-                    project=projects[proj_idx]
-                )
+                employee.projects.add(projects[proj_idx])
 
     def create_schedules(self, employees):
         """Создание расписаний для сотрудников"""

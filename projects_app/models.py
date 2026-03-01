@@ -3,10 +3,12 @@ from schedule_app.models import Employee
 
 
 class Project(models.Model):
-    project_name = models.CharField(max_length=100, unique=True)
+    project_name = models.CharField(max_length=255, unique=True)
+
     employees = models.ManyToManyField(
         "schedule_app.Employee",
-        through="EmployeeProject"
+        through="EmployeeProject",
+        related_name="projects"
     )
 
     def __str__(self):

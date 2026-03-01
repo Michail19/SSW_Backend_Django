@@ -13,19 +13,18 @@ class Employee(models.Model):
         blank=True
     )
 
-    projects = models.ManyToManyField("projects_app.Project", blank=True)
-
     def __str__(self):
         return self.fio
 
 
 class DaySchedule(models.Model):
-    start = models.CharField(max_length=10, null=True, blank=True)
-    end = models.CharField(max_length=10, null=True, blank=True)
+    start = models.TimeField(null=True, blank=True)
+    end = models.TimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.start}-{self.end}"
-
+        if self.start and self.end:
+            return f"{self.start}-{self.end}"
+        return "Off"
 
 class WeekSchedule(models.Model):
     employee = models.ForeignKey(
@@ -36,13 +35,13 @@ class WeekSchedule(models.Model):
 
     start_of_week = models.DateField()
 
-    monday = models.OneToOneField(DaySchedule, on_delete=models.SET_NULL, null=True, related_name="+")
-    tuesday = models.OneToOneField(DaySchedule, on_delete=models.SET_NULL, null=True, related_name="+")
-    wednesday = models.OneToOneField(DaySchedule, on_delete=models.SET_NULL, null=True, related_name="+")
-    thursday = models.OneToOneField(DaySchedule, on_delete=models.SET_NULL, null=True, related_name="+")
-    friday = models.OneToOneField(DaySchedule, on_delete=models.SET_NULL, null=True, related_name="+")
-    saturday = models.OneToOneField(DaySchedule, on_delete=models.SET_NULL, null=True, related_name="+")
-    sunday = models.OneToOneField(DaySchedule, on_delete=models.SET_NULL, null=True, related_name="+")
+    monday = models.ForeignKey(DaySchedule, on_delete=models.CASCADE, related_name="+")
+    tuesday = models.ForeignKey(DaySchedule, on_delete=models.CASCADE, related_name="+")
+    wednesday = models.ForeignKey(DaySchedule, on_delete=models.CASCADE, related_name="+")
+    thursday = models.ForeignKey(DaySchedule, on_delete=models.CASCADE, related_name="+")
+    friday = models.ForeignKey(DaySchedule, on_delete=models.CASCADE, related_name="+")
+    saturday = models.ForeignKey(DaySchedule, on_delete=models.CASCADE, related_name="+")
+    sunday = models.ForeignKey(DaySchedule, on_delete=models.CASCADE, related_name="+")
 
     class Meta:
         unique_together = ("employee", "start_of_week")
