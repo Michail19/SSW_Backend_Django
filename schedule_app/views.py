@@ -27,8 +27,16 @@ class WeeklyScheduleView(APIView):
             context={"monday": monday}
         )
 
+        # Формат "17-23 march 2025"
+        week_str = f"{monday.day}-{monday.day + 6} {monday.strftime('%B %Y').lower()}"
+
+        print(Response({
+            "currentWeek": week_str,
+            "employees": serializer.data
+        }).data)
+
         return Response({
-            "currentWeek": monday.strftime("%d-%m %B %Y"),
+            "currentWeek": week_str,
             "employees": serializer.data
         })
 

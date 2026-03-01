@@ -19,7 +19,7 @@ class Command(BaseCommand):
 
         # Текущая неделя
         current_week = CurrentWeek.objects.create(
-            week_range="02-08 june 2025"
+            week_range="02-08 june 2026"
         )
         self.stdout.write(f"Created current week: {current_week}")
 
@@ -155,7 +155,7 @@ class Command(BaseCommand):
         """Создание расписаний для сотрудников"""
 
         # Базовая дата начала недели
-        week_start = date(2025, 10, 20)
+        week_start = date(2026, 3, 2)
 
         # Расписание для сотрудника 1
         self.create_employee1_schedule(employees[0], week_start)

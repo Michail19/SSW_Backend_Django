@@ -22,7 +22,7 @@ def get_full_schedule_for_week(request_user, date=None):
             key=lambda e: 0 if e.id == current.id else 1
         )
 
-    # Создаём неделю для каждого сотрудника
+    # Создаем недели для каждого сотрудника
     for e in employees:
         get_or_create_week(e, monday)
 
@@ -30,23 +30,29 @@ def get_full_schedule_for_week(request_user, date=None):
 
 
 def get_or_create_week(employee, monday):
-    week, created = WeekSchedule.objects.get_or_create(
+    week = WeekSchedule.objects.filter(employee=employee, start_of_week=monday).first()
+    if week:
+        return week
+
+    # Создаем дни
+    days = {}
+    for day_name in [
+        "monday", "tuesday", "wednesday",
+        "thursday", "friday", "saturday", "sunday"
+    ]:
+        days[day_name] = DaySchedule.objects.create()
+
+    # Создаем неделю с привязкой ко всем дням
+    week = WeekSchedule.objects.create(
         employee=employee,
-        start_of_week=monday
+        start_of_week=monday,
+        monday=days["monday"],
+        tuesday=days["tuesday"],
+        wednesday=days["wednesday"],
+        thursday=days["thursday"],
+        friday=days["friday"],
+        saturday=days["saturday"],
+        sunday=days["sunday"]
     )
-
-    if created:
-        days = {}
-        for day_name in [
-            "monday", "tuesday", "wednesday",
-            "thursday", "friday", "saturday", "sunday"
-        ]:
-            day = DaySchedule.objects.create()
-            days[day_name] = day
-
-        for key, value in days.items():
-            setattr(week, key, value)
-
-        week.save()
 
     return week
