@@ -4,9 +4,12 @@ from .models import Project
 
 
 class EmployeeLessSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+
     class Meta:
         model = Employee
         fields = ["id", "fio"]
+        read_only_fields = []
 
 
 class ProjectSerializer(serializers.ModelSerializer):
