@@ -83,3 +83,13 @@ class AddEmployeeView(APIView):
             "id": employee.id,
             "fio": employee.fio
         }, status=status.HTTP_201_CREATED)
+
+
+class DeleteEmployeeView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def delete(self, request, employee_id):
+        employee = Employee.objects.get(id=employee_id)
+        employee.delete()
+
+        return Response({"detail": "Deleted"})
