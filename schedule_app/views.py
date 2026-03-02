@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Employee, WeekSchedule, DaySchedule
+from .permissions import IsOwner
 from .serializers import EmployeeDetailsSerializer
 from .services import get_full_schedule_for_week, create_empty_week, get_or_create_week
 
@@ -93,7 +94,7 @@ User = get_user_model()
 
 
 class AddEmployeeView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsOwner]
 
     def post(self, request):
         fio = request.data.get("fio")
@@ -117,7 +118,7 @@ class AddEmployeeView(APIView):
 
 
 class DeleteEmployeeView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsOwner]
 
     def delete(self, request, employee_id):
         employee = Employee.objects.get(id=employee_id)
