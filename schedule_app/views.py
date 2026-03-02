@@ -5,9 +5,20 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Employee, WeekSchedule
+from .models import Employee, WeekSchedule, DaySchedule
 from .serializers import EmployeeDetailsSerializer
 from .services import get_full_schedule_for_week, create_empty_week
+
+
+WEEKDAY_REVERSE_MAP = {
+    "monday": 0,
+    "tuesday": 1,
+    "wednesday": 2,
+    "thursday": 3,
+    "friday": 4,
+    "saturday": 5,
+    "sunday": 6,
+}
 
 
 class WeeklyScheduleView(APIView):
@@ -49,13 +60,12 @@ class UpdateScheduleView(APIView):
     def post(self, request):
         data = request.data
 
-        for item in data:
-            employee_id = item.get("employeeId")
-            week_start = parse_date(item.get("weekStart"))
-            schedule_data = item.get("schedule", {})
+        print(data)
 
-            if not employee_id or not week_start:
-                continue
+        for item in data:
+            employee_id = item["employeeId"]
+            week_start = item["weekStart"]
+            schedule_data = item["schedule"]
 
             employee = Employee.objects.get(id=employee_id)
 

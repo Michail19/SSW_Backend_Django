@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from schedule_app.models import Employee, DaySchedule, WeekSchedule, CurrentWeek
-from projects_app.models import Project, EmployeeProject
+from projects_app.models import Project
 from datetime import date, time
 from django.db import transaction
 
@@ -41,9 +41,8 @@ class Command(BaseCommand):
 
     def clean_database(self):
         """Очистка всех таблиц"""
-        WeekSchedule.objects.all().delete()
         DaySchedule.objects.all().delete()
-        EmployeeProject.objects.all().delete()
+        WeekSchedule.objects.all().delete()
         Employee.objects.all().delete()
         Project.objects.all().delete()
         User.objects.exclude(is_superuser=True).delete()
@@ -164,9 +163,9 @@ class Command(BaseCommand):
         self.create_employee2_schedule(employees[1], week_start)
 
         # Расписание для сотрудников 3-8 (одинаковое)
-        schedule_3_8 = self.create_standard_schedule(week_start)
+        schedule_3_8 = self.get_standard_schedule_data()
         for i in range(2, 8):  # индексы 2-7 (сотрудники 3-8)
-            self.assign_schedule_to_employee(employees[i], week_start, schedule_3_8)
+            self.create_week_with_days(employees[i], week_start, schedule_3_8)
 
         # Расписание для сотрудника 9
         self.create_employee9_schedule(employees[8], week_start)
@@ -180,159 +179,118 @@ class Command(BaseCommand):
         # Расписание для сотрудника 12
         self.create_employee12_schedule(employees[11], week_start)
 
-    def create_day(self, start_time=None, end_time=None):
-        """Вспомогательная функция для создания DaySchedule"""
-        return DaySchedule.objects.create(start=start_time, end=end_time)
-
     def create_employee1_schedule(self, employee, week_start):
         """Расписание для сотрудника 1"""
-        mon = self.create_day(time(8, 0), time(13, 40))
-        tue = self.create_day(time(8, 0), time(15, 30))
-        wed = self.create_day(time(15, 20), time(20, 0))
-        thu = self.create_day(time(15, 20), time(20, 0))
-        fri = self.create_day(time(8, 0), time(15, 30))
-        sat = self.create_day(None, None)
-        sun = self.create_day(None, None)
-
-        WeekSchedule.objects.create(
-            employee=employee,
-            start_of_week=week_start,
-            monday=mon,
-            tuesday=tue,
-            wednesday=wed,
-            thursday=thu,
-            friday=fri,
-            saturday=sat,
-            sunday=sun,
-        )
+        days_data = {
+            0: (time(8, 0), time(13, 40)),  # Monday
+            1: (time(8, 0), time(15, 30)),  # Tuesday
+            2: (time(15, 20), time(20, 0)),  # Wednesday
+            3: (time(15, 20), time(20, 0)),  # Thursday
+            4: (time(8, 0), time(15, 30)),  # Friday
+            5: (None, None),  # Saturday
+            6: (None, None),  # Sunday
+        }
+        self.create_week_with_days(employee, week_start, days_data)
 
     def create_employee2_schedule(self, employee, week_start):
         """Расписание для сотрудника 2"""
-        # Пн-Чт: 08:00-17:00
-        mon_thu = self.create_day(time(8, 0), time(17, 0))
-        # Пт: 08:00-16:00
-        fri = self.create_day(time(8, 0), time(16, 0))
-        # Сб-Вс: 10:00-14:00
-        weekend = self.create_day(time(10, 0), time(14, 0))
+        days_data = {
+            0: (time(8, 0), time(17, 0)),  # Monday
+            1: (time(8, 0), time(17, 0)),  # Tuesday
+            2: (time(8, 0), time(17, 0)),  # Wednesday
+            3: (time(8, 0), time(17, 0)),  # Thursday
+            4: (time(8, 0), time(16, 0)),  # Friday
+            5: (time(10, 0), time(14, 0)),  # Saturday
+            6: (time(10, 0), time(14, 0)),  # Sunday
+        }
+        self.create_week_with_days(employee, week_start, days_data)
 
-        WeekSchedule.objects.create(
-            employee=employee,
-            start_of_week=week_start,
-            monday=mon_thu,
-            tuesday=mon_thu,
-            wednesday=mon_thu,
-            thursday=mon_thu,
-            friday=fri,
-            saturday=weekend,
-            sunday=weekend,
-        )
-
-    def create_standard_schedule(self, week_start):
+    def get_standard_schedule_data(self):
         """Стандартное расписание для сотрудников 3-8"""
-        # Пн-Пт: 09:00-18:00
-        workday = self.create_day(time(9, 0), time(18, 0))
-        # Сб-Вс: 10:00-15:00
-        weekend = self.create_day(time(10, 0), time(15, 0))
-
         return {
-            'monday': workday,
-            'tuesday': workday,
-            'wednesday': workday,
-            'thursday': workday,
-            'friday': workday,
-            'saturday': weekend,
-            'sunday': weekend,
+            0: (time(9, 0), time(18, 0)),  # Monday
+            1: (time(9, 0), time(18, 0)),  # Tuesday
+            2: (time(9, 0), time(18, 0)),  # Wednesday
+            3: (time(9, 0), time(18, 0)),  # Thursday
+            4: (time(9, 0), time(18, 0)),  # Friday
+            5: (time(10, 0), time(15, 0)),  # Saturday
+            6: (time(10, 0), time(15, 0)),  # Sunday
         }
 
     def create_employee9_schedule(self, employee, week_start):
         """Расписание для сотрудника 9"""
-        mon_wed_fri = self.create_day(time(9, 0), time(18, 0))
-        thu = self.create_day(time(12, 0), time(18, 0))
-        weekend = self.create_day(time(10, 0), time(15, 0))
-
-        WeekSchedule.objects.create(
-            employee=employee,
-            start_of_week=week_start,
-            monday=mon_wed_fri,
-            tuesday=mon_wed_fri,
-            wednesday=mon_wed_fri,
-            thursday=thu,
-            friday=mon_wed_fri,
-            saturday=weekend,
-            sunday=weekend,
-        )
+        days_data = {
+            0: (time(9, 0), time(18, 0)),  # Monday
+            1: (time(9, 0), time(18, 0)),  # Tuesday
+            2: (time(9, 0), time(18, 0)),  # Wednesday
+            3: (time(12, 0), time(18, 0)),  # Thursday
+            4: (time(9, 0), time(18, 0)),  # Friday
+            5: (time(10, 0), time(15, 0)),  # Saturday
+            6: (time(10, 0), time(15, 0)),  # Sunday
+        }
+        self.create_week_with_days(employee, week_start, days_data)
 
     def create_employee10_schedule(self, employee, week_start):
         """Расписание для сотрудника 10"""
-        mon_tue_thu = self.create_day(time(9, 0), time(18, 0))
-        wed = self.create_day(time(9, 50), time(18, 10))
-        fri = self.create_day(time(19, 0), time(22, 0))
-        sat = self.create_day(time(11, 0), time(12, 0))
-        sun = self.create_day(time(10, 0), time(15, 0))
-
-        WeekSchedule.objects.create(
-            employee=employee,
-            start_of_week=week_start,
-            monday=mon_tue_thu,
-            tuesday=mon_tue_thu,
-            wednesday=wed,
-            thursday=mon_tue_thu,
-            friday=fri,
-            saturday=sat,
-            sunday=sun,
-        )
+        days_data = {
+            0: (time(9, 0), time(18, 0)),  # Monday
+            1: (time(9, 0), time(18, 0)),  # Tuesday
+            2: (time(9, 50), time(18, 10)),  # Wednesday
+            3: (time(9, 0), time(18, 0)),  # Thursday
+            4: (time(19, 0), time(22, 0)),  # Friday
+            5: (time(11, 0), time(12, 0)),  # Saturday
+            6: (time(10, 0), time(15, 0)),  # Sunday
+        }
+        self.create_week_with_days(employee, week_start, days_data)
 
     def create_employee11_schedule(self, employee, week_start):
         """Расписание для сотрудника 11"""
-        mon_wed = self.create_day(time(9, 0), time(18, 0))
-        tue = self.create_day(time(9, 10), time(18, 0))
-        thu = self.create_day(time(9, 0), time(11, 0))
-        fri = self.create_day(time(9, 30), time(18, 0))
-        weekend = self.create_day(time(10, 0), time(15, 0))
-
-        WeekSchedule.objects.create(
-            employee=employee,
-            start_of_week=week_start,
-            monday=mon_wed,
-            tuesday=tue,
-            wednesday=mon_wed,
-            thursday=thu,
-            friday=fri,
-            saturday=weekend,
-            sunday=weekend,
-        )
+        days_data = {
+            0: (time(9, 0), time(18, 0)),  # Monday
+            1: (time(9, 10), time(18, 0)),  # Tuesday
+            2: (time(9, 0), time(18, 0)),  # Wednesday
+            3: (time(9, 0), time(11, 0)),  # Thursday
+            4: (time(9, 30), time(18, 0)),  # Friday
+            5: (time(10, 0), time(15, 0)),  # Saturday
+            6: (time(10, 0), time(15, 0)),  # Sunday
+        }
+        self.create_week_with_days(employee, week_start, days_data)
 
     def create_employee12_schedule(self, employee, week_start):
         """Расписание для сотрудника 12"""
-        # Пн-Пт: 09:00-18:00
-        workday = self.create_day(time(9, 0), time(18, 0))
-        # Сб: 10:00-15:00
-        sat = self.create_day(time(10, 0), time(15, 0))
-        # Вс: 10:00-13:00
-        sun = self.create_day(time(10, 0), time(13, 0))
+        days_data = {
+            0: (time(9, 0), time(18, 0)),  # Monday
+            1: (time(9, 0), time(18, 0)),  # Tuesday
+            2: (time(9, 0), time(18, 0)),  # Wednesday
+            3: (time(9, 0), time(18, 0)),  # Thursday
+            4: (time(9, 0), time(18, 0)),  # Friday
+            5: (time(10, 0), time(15, 0)),  # Saturday
+            6: (time(10, 0), time(13, 0)),  # Sunday
+        }
+        self.create_week_with_days(employee, week_start, days_data)
 
-        WeekSchedule.objects.create(
+    def create_week_with_days(self, employee, week_start, days_data):
+        """
+        Создает неделю с днями
+        days_data = {
+            0: (time(8,0), time(17,0)),  # Monday
+            1: (time(8,0), time(17,0)),  # Tuesday
+            ...
+        }
+        """
+        week = WeekSchedule.objects.create(
             employee=employee,
-            start_of_week=week_start,
-            monday=workday,
-            tuesday=workday,
-            wednesday=workday,
-            thursday=workday,
-            friday=workday,
-            saturday=sat,
-            sunday=sun,
+            start_of_week=week_start
         )
 
-    def assign_schedule_to_employee(self, employee, week_start, schedule_dict):
-        """Назначение расписания сотруднику"""
-        WeekSchedule.objects.create(
-            employee=employee,
-            start_of_week=week_start,
-            monday=schedule_dict['monday'],
-            tuesday=schedule_dict['tuesday'],
-            wednesday=schedule_dict['wednesday'],
-            thursday=schedule_dict['thursday'],
-            friday=schedule_dict['friday'],
-            saturday=schedule_dict['saturday'],
-            sunday=schedule_dict['sunday'],
-        )
+        for weekday in range(7):
+            start, end = days_data.get(weekday, (None, None))
+
+            DaySchedule.objects.create(
+                week=week,
+                weekday=weekday,
+                start=start,
+                end=end
+            )
+
+        return week
