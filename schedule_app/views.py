@@ -1,15 +1,13 @@
-from datetime import datetime
-from django.utils.dateparse import parse_date
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django.contrib.auth import get_user_model
+from django.utils.dateparse import parse_date, parse_time
+from rest_framework import status
+from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
-from .models import Employee
-from django.contrib.auth import get_user_model
+from .models import Employee, WeekSchedule
 from .serializers import EmployeeDetailsSerializer
-from .serializers import WeekScheduleSerializer
-from .services import get_full_schedule_for_week
-from .services import get_or_create_week, get_week_start
+from .services import get_full_schedule_for_week, create_empty_week
 
 
 class WeeklyScheduleView(APIView):
@@ -17,6 +15,10 @@ class WeeklyScheduleView(APIView):
 
     def get(self, request):
         date_param = request.GET.get("date")
+
+        if date_param:
+            date_param = date_param.rstrip("/")  # убираем возможный слэш
+
         date = parse_date(date_param) if date_param else None
 
         monday, employees = get_full_schedule_for_week(request.user, date)
@@ -44,26 +46,38 @@ class WeeklyScheduleView(APIView):
 class UpdateScheduleView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def put(self, request, employee_id):
-        employee = Employee.objects.get(id=employee_id)
+    def post(self, request):
+        data = request.data
 
-        date_param = request.data.get("date")
-        date = datetime.strptime(date_param, "%Y-%m-%d").date()
-        monday = get_week_start(date)
+        for item in data:
+            employee_id = item.get("employeeId")
+            week_start = parse_date(item.get("weekStart"))
+            schedule_data = item.get("schedule", {})
 
-        week = get_or_create_week(employee, monday)
+            if not employee_id or not week_start:
+                continue
 
-        serializer = WeekScheduleSerializer(
-            week,
-            data=request.data,
-            partial=True
-        )
+            employee = Employee.objects.get(id=employee_id)
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
+            # создаём неделю если её нет
+            week_obj, created = WeekSchedule.objects.get_or_create(
+                employee=employee,
+                start_of_week=week_start,
+                defaults=create_empty_week(employee, week_start)
+            )
 
-        return Response(serializer.errors, status=400)
+            # обновляем дни
+            for day_name, day_values in schedule_data.items():
+                start = parse_time(day_values.get("start")) if day_values.get("start") else None
+                end = parse_time(day_values.get("end")) if day_values.get("end") else None
+
+                day_obj = getattr(week_obj, day_name)
+
+                day_obj.start = start
+                day_obj.end = end
+                day_obj.save()
+
+        return Response({"status": "ok"})
 
 
 User = get_user_model()

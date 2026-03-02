@@ -56,3 +56,14 @@ def get_or_create_week(employee, monday):
     )
 
     return week
+
+def create_empty_week(employee, week_start):
+    return {
+        "monday": DaySchedule.objects.create(),
+        "tuesday": DaySchedule.objects.create(),
+        "wednesday": DaySchedule.objects.create(),
+        "thursday": DaySchedule.objects.create(),
+        "friday": DaySchedule.objects.create(),
+        "saturday": DaySchedule.objects.create(),
+        "sunday": DaySchedule.objects.create(),
+    }
