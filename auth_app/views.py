@@ -28,9 +28,10 @@ class LoginView(APIView):
 
         refresh = RefreshToken.for_user(user)
 
-        # добавляем кастомные claims
+        # кастомные claims
         refresh["userId"] = user.id
         refresh["accessLevel"] = user.level
+        refresh["sub"] = user.username
 
         return Response({
             "token": str(refresh.access_token)

@@ -1,13 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.utils.dateparse import parse_date, parse_time
 from rest_framework import status
-from rest_framework.permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Employee, WeekSchedule
+from .models import Employee, DaySchedule
+from .permissions import IsOwner
 from .serializers import EmployeeDetailsSerializer
-from .services import get_full_schedule_for_week, create_empty_week
+from .services import get_full_schedule_for_week, get_or_create_week
 
 
 class WeeklyScheduleView(APIView):
@@ -43,6 +43,17 @@ class WeeklyScheduleView(APIView):
         })
 
 
+WEEKDAY_REVERSE_MAP = {
+    "monday": 0,
+    "tuesday": 1,
+    "wednesday": 2,
+    "thursday": 3,
+    "friday": 4,
+    "saturday": 5,
+    "sunday": 6,
+}
+
+
 class UpdateScheduleView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -50,28 +61,26 @@ class UpdateScheduleView(APIView):
         data = request.data
 
         for item in data:
-            employee_id = item.get("employeeId")
-            week_start = parse_date(item.get("weekStart"))
-            schedule_data = item.get("schedule", {})
-
-            if not employee_id or not week_start:
-                continue
+            employee_id = item["employeeId"]
+            week_start = parse_date(item["weekStart"])
+            schedule_data = item["schedule"]
 
             employee = Employee.objects.get(id=employee_id)
 
-            # создаём неделю если её нет
-            week_obj, created = WeekSchedule.objects.get_or_create(
-                employee=employee,
-                start_of_week=week_start,
-                defaults=create_empty_week(employee, week_start)
-            )
+            # 🔹 Получаем или создаём неделю
+            week_obj = get_or_create_week(employee, week_start)
 
-            # обновляем дни
+            # 🔹 Обновляем дни
             for day_name, day_values in schedule_data.items():
+                weekday_index = WEEKDAY_REVERSE_MAP[day_name]
+
+                day_obj = DaySchedule.objects.get(
+                    week=week_obj,
+                    weekday=weekday_index
+                )
+
                 start = parse_time(day_values.get("start")) if day_values.get("start") else None
                 end = parse_time(day_values.get("end")) if day_values.get("end") else None
-
-                day_obj = getattr(week_obj, day_name)
 
                 day_obj.start = start
                 day_obj.end = end
@@ -84,7 +93,7 @@ User = get_user_model()
 
 
 class AddEmployeeView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsOwner]
 
     def post(self, request):
         fio = request.data.get("fio")
@@ -108,7 +117,7 @@ class AddEmployeeView(APIView):
 
 
 class DeleteEmployeeView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsOwner]
 
     def delete(self, request, employee_id):
         employee = Employee.objects.get(id=employee_id)

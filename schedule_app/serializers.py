@@ -7,7 +7,7 @@ class DayScheduleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DaySchedule
-        fields = ["start", "end"]
+        fields = ["weekday", "start", "end"]
 
     def get_start(self, obj):
         return obj.start.strftime("%H:%M") if obj.start else ""
@@ -17,20 +17,22 @@ class DayScheduleSerializer(serializers.ModelSerializer):
 
 
 class WeekScheduleSerializer(serializers.ModelSerializer):
-    monday = DayScheduleSerializer()
-    tuesday = DayScheduleSerializer()
-    wednesday = DayScheduleSerializer()
-    thursday = DayScheduleSerializer()
-    friday = DayScheduleSerializer()
-    saturday = DayScheduleSerializer()
-    sunday = DayScheduleSerializer()
+    days = DayScheduleSerializer(many=True)
 
     class Meta:
         model = WeekSchedule
-        fields = [
-            "monday", "tuesday", "wednesday",
-            "thursday", "friday", "saturday", "sunday"
-        ]
+        fields = ["days"]
+
+
+WEEKDAY_MAP = {
+    0: "monday",
+    1: "tuesday",
+    2: "wednesday",
+    3: "thursday",
+    4: "friday",
+    5: "saturday",
+    6: "sunday",
+}
 
 
 class EmployeeDetailsSerializer(serializers.ModelSerializer):
@@ -47,10 +49,26 @@ class EmployeeDetailsSerializer(serializers.ModelSerializer):
     def get_weekSchedule(self, obj):
         monday = self.context.get("monday")
 
-        schedule = obj.week_schedules.filter(start_of_week=monday).first()
+        schedule = obj.week_schedules.filter(
+            start_of_week=monday
+        ).prefetch_related("days").first()
+
+        # пустая неделя
+        empty_week = {
+            day: {"start": "", "end": ""}
+            for day in WEEKDAY_MAP.values()
+        }
+
         if not schedule:
-            # возвращаем пустую неделю
-            empty_week = {day: {"start": "", "end": ""} for day in
-                          ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]}
             return empty_week
-        return WeekScheduleSerializer(schedule).data
+
+        result = empty_week.copy()
+
+        for day in schedule.days.all():
+            day_name = WEEKDAY_MAP[day.weekday]
+            result[day_name] = {
+                "start": day.start.strftime("%H:%M") if day.start else "",
+                "end": day.end.strftime("%H:%M") if day.end else "",
+            }
+
+        return result

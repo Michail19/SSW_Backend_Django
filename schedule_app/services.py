@@ -30,40 +30,34 @@ def get_full_schedule_for_week(request_user, date=None):
 
 
 def get_or_create_week(employee, monday):
-    week = WeekSchedule.objects.filter(employee=employee, start_of_week=monday).first()
-    if week:
-        return week
-
-    # Создаем дни
-    days = {}
-    for day_name in [
-        "monday", "tuesday", "wednesday",
-        "thursday", "friday", "saturday", "sunday"
-    ]:
-        days[day_name] = DaySchedule.objects.create()
-
-    # Создаем неделю с привязкой ко всем дням
-    week = WeekSchedule.objects.create(
+    week, created = WeekSchedule.objects.get_or_create(
         employee=employee,
-        start_of_week=monday,
-        monday=days["monday"],
-        tuesday=days["tuesday"],
-        wednesday=days["wednesday"],
-        thursday=days["thursday"],
-        friday=days["friday"],
-        saturday=days["saturday"],
-        sunday=days["sunday"]
+        start_of_week=monday
     )
+
+    if created:
+        for i in range(7):
+            DaySchedule.objects.create(
+                week=week,
+                weekday=i
+            )
 
     return week
 
 def create_empty_week(employee, week_start):
-    return {
-        "monday": DaySchedule.objects.create(),
-        "tuesday": DaySchedule.objects.create(),
-        "wednesday": DaySchedule.objects.create(),
-        "thursday": DaySchedule.objects.create(),
-        "friday": DaySchedule.objects.create(),
-        "saturday": DaySchedule.objects.create(),
-        "sunday": DaySchedule.objects.create(),
-    }
+    # Сначала создаём объект недели
+    week_obj = WeekSchedule.objects.create(
+        employee=employee,
+        start_of_week=week_start
+    )
+
+    # Создаём дни для недели
+    days = {}
+    for i, day_name in enumerate(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]):
+        day = DaySchedule.objects.create(
+            week=week_obj,
+            weekday=i  # 0=Monday ... 6=Sunday
+        )
+        days[day_name] = day
+
+    return days
