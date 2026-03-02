@@ -1,14 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.utils.dateparse import parse_date, parse_time
 from rest_framework import status
-from rest_framework.permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Employee, WeekSchedule, DaySchedule
+from .models import Employee, DaySchedule
 from .permissions import IsOwner
 from .serializers import EmployeeDetailsSerializer
-from .services import get_full_schedule_for_week, create_empty_week, get_or_create_week
+from .services import get_full_schedule_for_week, get_or_create_week
 
 
 class WeeklyScheduleView(APIView):
