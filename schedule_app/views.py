@@ -1,15 +1,13 @@
-from datetime import datetime
-from django.utils.dateparse import parse_date
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django.contrib.auth import get_user_model
+from django.utils.dateparse import parse_date, parse_time
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
-from .models import Employee
-from django.contrib.auth import get_user_model
+from .models import Employee, DaySchedule
+from .permissions import IsOwner
 from .serializers import EmployeeDetailsSerializer
-from .serializers import WeekScheduleSerializer
-from .services import get_full_schedule_for_week
-from .services import get_or_create_week, get_week_start
+from .services import get_full_schedule_for_week, get_or_create_week
 
 
 class WeeklyScheduleView(APIView):
@@ -17,6 +15,10 @@ class WeeklyScheduleView(APIView):
 
     def get(self, request):
         date_param = request.GET.get("date")
+
+        if date_param:
+            date_param = date_param.rstrip("/")  # убираем возможный слэш
+
         date = parse_date(date_param) if date_param else None
 
         monday, employees = get_full_schedule_for_week(request.user, date)
@@ -27,42 +29,71 @@ class WeeklyScheduleView(APIView):
             context={"monday": monday}
         )
 
+        # Формат "17-23 march 2025"
+        week_str = f"{monday.day}-{monday.day + 6} {monday.strftime('%B %Y').lower()}"
+
+        print(Response({
+            "currentWeek": week_str,
+            "employees": serializer.data
+        }).data)
+
         return Response({
-            "currentWeek": monday.strftime("%d-%m %B %Y"),
+            "currentWeek": week_str,
             "employees": serializer.data
         })
+
+
+WEEKDAY_REVERSE_MAP = {
+    "monday": 0,
+    "tuesday": 1,
+    "wednesday": 2,
+    "thursday": 3,
+    "friday": 4,
+    "saturday": 5,
+    "sunday": 6,
+}
 
 
 class UpdateScheduleView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def put(self, request, employee_id):
-        employee = Employee.objects.get(id=employee_id)
+    def post(self, request):
+        data = request.data
 
-        date_param = request.data.get("date")
-        date = datetime.strptime(date_param, "%Y-%m-%d").date()
-        monday = get_week_start(date)
+        for item in data:
+            employee_id = item["employeeId"]
+            week_start = parse_date(item["weekStart"])
+            schedule_data = item["schedule"]
 
-        week = get_or_create_week(employee, monday)
+            employee = Employee.objects.get(id=employee_id)
 
-        serializer = WeekScheduleSerializer(
-            week,
-            data=request.data,
-            partial=True
-        )
+            # 🔹 Получаем или создаём неделю
+            week_obj = get_or_create_week(employee, week_start)
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
+            # 🔹 Обновляем дни
+            for day_name, day_values in schedule_data.items():
+                weekday_index = WEEKDAY_REVERSE_MAP[day_name]
 
-        return Response(serializer.errors, status=400)
+                day_obj = DaySchedule.objects.get(
+                    week=week_obj,
+                    weekday=weekday_index
+                )
+
+                start = parse_time(day_values.get("start")) if day_values.get("start") else None
+                end = parse_time(day_values.get("end")) if day_values.get("end") else None
+
+                day_obj.start = start
+                day_obj.end = end
+                day_obj.save()
+
+        return Response({"status": "ok"})
 
 
 User = get_user_model()
 
 
 class AddEmployeeView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsOwner]
 
     def post(self, request):
         fio = request.data.get("fio")
@@ -86,7 +117,7 @@ class AddEmployeeView(APIView):
 
 
 class DeleteEmployeeView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsOwner]
 
     def delete(self, request, employee_id):
         employee = Employee.objects.get(id=employee_id)

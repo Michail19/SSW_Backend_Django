@@ -154,7 +154,20 @@ from datetime import timedelta
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=10),
     "AUTH_HEADER_TYPES": ("Bearer",),
+    "ALGORITHM": "HS512",
+    "SIGNING_KEY": SECRET_KEY,
 }
+
+CORS_ALLOW_HEADERS = [
+    "authorization",
+    "content-type",
+    "cache-control",
+    "accept",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
