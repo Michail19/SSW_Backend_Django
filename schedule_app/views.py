@@ -7,18 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Employee, WeekSchedule, DaySchedule
 from .serializers import EmployeeDetailsSerializer
-from .services import get_full_schedule_for_week, create_empty_week
-
-
-WEEKDAY_REVERSE_MAP = {
-    "monday": 0,
-    "tuesday": 1,
-    "wednesday": 2,
-    "thursday": 3,
-    "friday": 4,
-    "saturday": 5,
-    "sunday": 6,
-}
+from .services import get_full_schedule_for_week, create_empty_week, get_or_create_week
 
 
 class WeeklyScheduleView(APIView):
@@ -54,34 +43,44 @@ class WeeklyScheduleView(APIView):
         })
 
 
+WEEKDAY_REVERSE_MAP = {
+    "monday": 0,
+    "tuesday": 1,
+    "wednesday": 2,
+    "thursday": 3,
+    "friday": 4,
+    "saturday": 5,
+    "sunday": 6,
+}
+
+
 class UpdateScheduleView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         data = request.data
 
-        print(data)
-
         for item in data:
             employee_id = item["employeeId"]
-            week_start = item["weekStart"]
+            week_start = parse_date(item["weekStart"])
             schedule_data = item["schedule"]
 
             employee = Employee.objects.get(id=employee_id)
 
-            # создаём неделю если её нет
-            week_obj, created = WeekSchedule.objects.get_or_create(
-                employee=employee,
-                start_of_week=week_start,
-                defaults=create_empty_week(employee, week_start)
-            )
+            # 🔹 Получаем или создаём неделю
+            week_obj = get_or_create_week(employee, week_start)
 
-            # обновляем дни
+            # 🔹 Обновляем дни
             for day_name, day_values in schedule_data.items():
+                weekday_index = WEEKDAY_REVERSE_MAP[day_name]
+
+                day_obj = DaySchedule.objects.get(
+                    week=week_obj,
+                    weekday=weekday_index
+                )
+
                 start = parse_time(day_values.get("start")) if day_values.get("start") else None
                 end = parse_time(day_values.get("end")) if day_values.get("end") else None
-
-                day_obj = getattr(week_obj, day_name)
 
                 day_obj.start = start
                 day_obj.end = end
