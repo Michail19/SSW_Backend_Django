@@ -37,19 +37,25 @@ COPY . .
 # -------------------------
 # Create non-root user
 # -------------------------
-RUN useradd -m appuser
+RUN useradd -m appuser \
+    && chown -R appuser:appuser /app
+
+# -------------------------
+# Copy entrypoint BEFORE switching user
+# -------------------------
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh \
+    && chown appuser:appuser /app/entrypoint.sh
+
+# -------------------------
+# Switch to non-root
+# -------------------------
 USER appuser
 
 # -------------------------
 # Expose port
 # -------------------------
 EXPOSE 8000
-
-# -------------------------
-# Add script
-# -------------------------
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
 
 # -------------------------
 # Start server
