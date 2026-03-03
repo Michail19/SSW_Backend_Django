@@ -1,14 +1,40 @@
-name: workflow.yml
+name: test-ci-cd
 
 on:
   push:
-    branches: [ "main", "review" ]
+    branches: ["main", "review"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  test:
 
+  # -----------------------
+  # LINT
+  # -----------------------
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install flake8
+
+      - name: Run flake8
+        run: |
+          flake8 .
+
+  # -----------------------
+  # TEST
+  # -----------------------
+  test:
     runs-on: ubuntu-latest
 
     services:
@@ -26,6 +52,11 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
+    env:
+      DATABASE_URL: postgres://testuser:testpass@127.0.0.1:5432/testdb
+      SECRET_KEY: testsecretkey
+      DEBUG: "False"
+
     steps:
       - uses: actions/checkout@v4
 
@@ -39,19 +70,23 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run migrations
-        env:
-          DB_NAME: testdb
-          DB_USER: testuser
-          DB_PASSWORD: testpass
-          DB_HOST: 127.0.0.1
         run: |
           python manage.py migrate
 
       - name: Run tests
-        env:
-          DB_NAME: testdb
-          DB_USER: testuser
-          DB_PASSWORD: testpass
-          DB_HOST: 127.0.0.1
         run: |
           python manage.py test
+
+  # -----------------------
+  # DOCKER BUILD
+  # -----------------------
+  build:
+    runs-on: ubuntu-latest
+    needs: test   # билд только если тесты прошли
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t ssw-backend .
