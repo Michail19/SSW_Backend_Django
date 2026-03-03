@@ -2,6 +2,7 @@ from datetime import timedelta
 from django.utils.timezone import now
 from .models import Employee, WeekSchedule, DaySchedule
 
+
 def get_week_start(date):
     return date - timedelta(days=date.weekday())
 
@@ -43,6 +44,7 @@ def get_or_create_week(employee, monday):
             )
 
     return week
+
 
 def create_empty_week(employee, week_start):
     # Сначала создаём объект недели

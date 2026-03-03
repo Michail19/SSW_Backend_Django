@@ -3,7 +3,6 @@ from .models import DaySchedule, WeekSchedule, Employee
 
 
 class DayScheduleSerializer(serializers.ModelSerializer):
-
     start = serializers.SerializerMethodField()
     end = serializers.SerializerMethodField()
 
@@ -19,7 +18,6 @@ class DayScheduleSerializer(serializers.ModelSerializer):
 
 
 class WeekScheduleSerializer(serializers.ModelSerializer):
-
     days = DayScheduleSerializer(many=True)
 
     class Meta:
@@ -39,7 +37,6 @@ WEEKDAY_MAP = {
 
 
 class EmployeeDetailsSerializer(serializers.ModelSerializer):
-
     weekSchedule = serializers.SerializerMethodField()
     projects = serializers.SerializerMethodField()
 
