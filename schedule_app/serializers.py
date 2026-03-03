@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import DaySchedule, WeekSchedule, Employee
 
+
 class DayScheduleSerializer(serializers.ModelSerializer):
     start = serializers.SerializerMethodField()
     end = serializers.SerializerMethodField()

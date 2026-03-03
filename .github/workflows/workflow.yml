@@ -36,6 +36,7 @@ jobs:
   # -----------------------
   test:
     runs-on: ubuntu-latest
+    needs: lint   # тестирование только если линтер прошёл
 
     services:
       postgres:
