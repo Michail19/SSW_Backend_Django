@@ -1,19 +1,18 @@
-name: test-ci-cd
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["review"]
+    branches: ["main", "review"]
   pull_request:
     branches: ["main"]
+  workflow_dispatch:
 
 jobs:
-
   # -----------------------
   # LINT
   # -----------------------
   lint:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -36,8 +35,7 @@ jobs:
   # -----------------------
   test:
     runs-on: ubuntu-latest
-    needs: lint   # тестирование только если линтер прошёл
-
+    needs: lint
     services:
       postgres:
         image: postgres:15
@@ -52,12 +50,10 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-
     env:
       DATABASE_URL: postgres://testuser:testpass@127.0.0.1:5432/testdb
       SECRET_KEY: testsecretkey
       DEBUG: "False"
-
     steps:
       - uses: actions/checkout@v4
 
@@ -83,11 +79,23 @@ jobs:
   # -----------------------
   build:
     runs-on: ubuntu-latest
-    needs: test   # билд только если тесты прошли
-
+    needs: test
     steps:
       - uses: actions/checkout@v4
 
       - name: Build Docker image
         run: |
           docker build -t ssw-backend .
+
+  # -----------------------
+  # DEPLOY TO RENDER
+  # -----------------------
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Trigger Render deploy
+        run: |
+          curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          
